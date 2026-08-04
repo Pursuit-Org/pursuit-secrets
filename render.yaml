@@ -2,7 +2,7 @@ services:
   - type: web
     name: pursuit-secrets
     runtime: docker
-    repo: https://github.com/Pursuit-Assets/pursuit-secrets
+    repo: https://github.com/Pursuit-Org/pursuit-secrets
     branch: master
     plan: starter
     region: oregon

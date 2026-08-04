@@ -2,7 +2,7 @@ FROM privatebin/nginx-fpm-alpine:2.0.5@sha256:91e3adf17da1c9e2715cb57ff22940a664
 
 LABEL org.opencontainers.image.title="Pursuit Secrets" \
       org.opencontainers.image.description="Pursuit-themed PrivateBin deployment" \
-      org.opencontainers.image.source="https://github.com/Pursuit-Assets/pursuit-secrets" \
+      org.opencontainers.image.source="https://github.com/Pursuit-Org/pursuit-secrets" \
       org.opencontainers.image.version="2.0.5-pursuit.1"
 
 COPY --chown=65534:82 cfg/conf.php /srv/cfg/conf.php
