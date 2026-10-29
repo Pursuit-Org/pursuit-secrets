@@ -39,13 +39,15 @@ not just `ct`. A ciphertext at exactly the old limit will no longer fit. The
 limit is deliberately below the proxy and runtime limits; larger attachments
 should use a storage flow designed for chunked uploads.
 
-## October 2026 security candidate
+## October 2026 security deployment
 
-This is a local review candidate, not a deployed change. The base manifest is
+Production runs commit `927ecbc7ae0d1cc6593665c173f6515e60a67ea4`, deployed
+October 28 (October 29 UTC) with explicit authorization. The base manifest is
 `sha256:0f80fb240c3c3073c53a82893da7c7d62f03f4e05403855b720e4371541ba412`.
 Local arm64 and linux/amd64 builds passed the PHP `8.5.12` floor, PHP syntax,
 and PHP-FPM configuration checks as the runtime user. The amd64 checks ran
-locally under emulation; no Render build or deployment was performed.
+locally under emulation. Render's build also passed these guards, and its Web
+Shell confirmed PHP `8.5.12` with the session extension absent.
 
 - PHP `8.5.12` fixes [CVE-2026-109618 and CVE-2026-109619](https://www.php.net/archive/2026.php#2026-10-21-5).
 - `session.upload_progress.enabled=0` follows PHP's October 23 advice. This
@@ -96,8 +98,9 @@ Candidate validation on October 28:
 - Browser creation, reading after container restart, password decryption,
   single-use confirmation, and rejection after consumption passed. Discussion
   and email remained disabled.
-- The browser file-picker check did not select the synthetic attachment, so
-  attachment upload/preview remains unverified. Complete it before deployment.
+- The local file-picker check did not select an attachment. Production clipboard
+  image attachment, encryption, preview, and download subsequently passed; the
+  downloaded 67-byte PNG exactly matched the synthetic input.
 - The full upstream test suite was not run; these checks target the actual
   deployment image. Runtime CVE closure is evidenced by the patched PHP package,
   not by attempting remote code execution.
@@ -172,10 +175,30 @@ For each upstream release:
 5. Deploy from a reviewed commit and repeat the live paste/persistence smoke
    test.
 
-Before reopening this service, review the diff and amd64 image, back up the
-existing `/srv/data` disk, and finish testing the
-Pursuit UI (text, password, attachment, preview, delete, and single-use links).
-Deployment and resuming the service are separate, explicitly authorized steps.
+Production verification:
+
+- Existing disk `dsk-d9f7jdbrjlhs73dn4s8g` remains mounted at `/srv/data`.
+  Its pre-deployment snapshot dated `2026-10-29T00:12:29.879Z` was confirmed;
+  a restore was not attempted.
+- Maintenance mode protected the old runtime while the suspended service was
+  resumed and the patched image deployed. Deployment
+  `dep-dbhbcr142hec73bvpkm0` is live, the service is unsuspended, and maintenance
+  mode is off.
+- HTTPS returned 200, HTTP redirected to HTTPS, HSTS was present, and dynamic
+  responses included `Cache-Control: no-store, no-cache, no-transform,
+  must-revalidate`.
+- A synthetic ordinary paste survived a Render restart, was deleted through
+  the API, and could no longer be read. A synthetic password-protected,
+  single-use image paste decrypted successfully, displayed its attachment,
+  downloaded unchanged, and could not be read a second time. No existing user
+  pastes were read or deleted.
+- Restart briefly returned 502, as expected for this single-instance service
+  with a persistent disk. Availability recovered and the final HTTPS check
+  passed. The large-body regression was run against disposable local instances,
+  not production's 50 MB limit.
+
+For future deployments, review the diff and amd64 image, confirm a recent disk
+snapshot, and repeat the synthetic browser and persistence checks.
 Changing the pinned base digest is required: rebuilding the old Dockerfile
 cannot pick up a PHP security update.
 
