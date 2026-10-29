@@ -1,0 +1,98 @@
+--- a/lib/Request.php
++++ b/lib/Request.php
+@@ -13,6 +13,7 @@
+ 
+ use JsonException;
+ use PrivateBin\Model\Paste;
++use PrivateBin\Exception\TranslatedException;
+ 
+ /**
+  * Request
+@@ -41,6 +42,13 @@
+      * @const string
+      */
+     const MIME_XHTML = 'application/xhtml+xml';
++
++    /**
++     * Actual input stream length, including authenticated metadata.
++     *
++     * @var int
++     */
++    private $_bodyLength = 0;
+ 
+     /**
+      * Input stream to use for PUT parameter parsing
+@@ -112,6 +120,7 @@
+                 $this->_operation = 'create';
+                 try {
+                     $data          = file_get_contents(self::$_inputStream);
++                    $this->_bodyLength = strlen($data);
+                     $this->_params = Json::decode($data);
+                     // a valid JSON scalar (number, bool or string) decodes
+                     // without error, but is not a usable set of parameters
+@@ -182,8 +191,14 @@
+      * @access public
+      * @return array
+      */
+-    public function getData()
+-    {
++    public function getData(int $sizelimit)
++    {
++        if ($this->_bodyLength > $sizelimit) {
++            throw new TranslatedException([
++                'Document is limited to %s of encrypted data.',
++                Filter::formatHumanReadableSize($sizelimit),
++            ]);
++        }
+         $data = [
+             'adata' => $this->getParam('adata'),
+         ];
+--- a/lib/Controller.php
++++ b/lib/Controller.php
+@@ -282,12 +282,12 @@
+         TrafficLimiter::setStore($this->_model->getStore());
+         try {
+             TrafficLimiter::canPass();
++            $data = $this->_request->getData($this->_conf->getKey('sizelimit'));
+         } catch (TranslatedException $e) {
+             $this->_json_error($e->getMessage());
+             return;
+         }
+ 
+-        $data      = $this->_request->getData();
+         $isComment = array_key_exists('pasteid', $data) &&
+             !empty($data['pasteid']) &&
+             array_key_exists('parentid', $data) &&
+@@ -296,18 +296,6 @@
+             $this->_json_error(I18n::_('Invalid data.'));
+             return;
+         }
+-        $sizelimit = $this->_conf->getKey('sizelimit');
+-        // Ensure content is not too big.
+-        if (strlen($data['ct']) > $sizelimit) {
+-            $this->_json_error(
+-                I18n::_(
+-                    'Document is limited to %s of encrypted data.',
+-                    Filter::formatHumanReadableSize($sizelimit)
+-                )
+-            );
+-            return;
+-        }
+-
+         // The user posts a comment.
+         if ($isComment) {
+             $paste = $this->_model->getPaste($data['pasteid']);
+--- a/lib/FormatV2.php
++++ b/lib/FormatV2.php
+@@ -60,6 +60,11 @@
+ 
+         // Make sure the cipher parameters are a properly sized array.
+         if (!is_array($cipherParams) || count($cipherParams) < 8) {
++            return false;
++        }
++
++        // Make sure the adata parameters of pastes are a properly sized array.
++        if (!$isComment && count($message['adata']) !== 4) {
+             return false;
+         }
+ 

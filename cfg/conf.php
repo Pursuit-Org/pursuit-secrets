@@ -12,7 +12,7 @@ defaultformatter = "plaintext"
 sizelimit = 50000000
 templateselection = false
 template = "bootstrap5"
-info = "Powered by PrivateBin 2.0.5."
+info = "Powered by PrivateBin 2.1.0 with Pursuit security backports."
 notice = "Only people with the generated link will be able to see this message."
 languageselection = false
 qrcode = true
@@ -48,3 +48,7 @@ class = Filesystem
 
 [model_options]
 dir = PATH "data"
+
+; Keep SRI enabled for the optional-controls backport in the built image.
+[sri]
+js/privatebin.js = "sha512-yYyAIdSfYpOz7fZ3/g4unChe8/ltEZxY3mxZLOjEcrZpF2wNB0yGelFCI5XNtdn3omBInOjxQ9EPJDXY1N6Gww=="

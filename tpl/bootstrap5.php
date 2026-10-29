@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Pursuit theme, adapted from PrivateBin 2.0.5's Bootstrap 5 template.
+ * Pursuit theme, adapted from PrivateBin 2.1.0's Bootstrap 5 template.
  * PrivateBin is distributed under the zlib/libpng license; see LICENSE.md.
  */
 use PrivateBin\I18n;
@@ -31,7 +31,6 @@ endif;
 ?>
 		<noscript><link type="text/css" rel="stylesheet" href="css/noscript.css" /></noscript>
 		<?php $this->_linkTag('js/zlib-1.3.2.js'); ?>
-		<?php $this->_scriptTag('js/jquery-3.7.1.js', 'defer'); ?>
 <?php
 if ($QRCODE) :
 ?>
@@ -54,7 +53,7 @@ if ($MARKDOWN) :
 <?php
 endif;
 ?>
-		<?php $this->_scriptTag('js/purify-3.4.1.js', 'defer'); ?>
+		<?php $this->_scriptTag('js/purify-3.4.17.js', 'defer'); ?>
 		<?php $this->_scriptTag('js/legacy.js', 'defer'); ?>
 		<?php $this->_scriptTag('js/privatebin.js', 'defer'); ?>
 		<script defer type="text/javascript" data-cfasync="false" src="js/pursuit.js?<?php echo rawurlencode($VERSION); ?>-pursuit-15" crossorigin="anonymous"></script>
